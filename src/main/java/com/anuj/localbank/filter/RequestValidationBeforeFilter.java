@@ -18,11 +18,14 @@ public class RequestValidationBeforeFilter implements Filter {
     public static final String AUTHENTICATION_SCHEME_BASIC = "Basic";
     private Charset credentialsCharset = StandardCharsets.UTF_8;
 //            Charset.forName("UTF-8");
+
+
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
-        String header = ((HttpServletRequest) request).getHeader(AUTHORIZATION);
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
+        String header = req.getHeader(AUTHORIZATION);
         if (header != null) {
             header = header.trim();
             if (StringUtils.startsWithIgnoreCase(header,AUTHENTICATION_SCHEME_BASIC)) {
@@ -32,12 +35,12 @@ public class RequestValidationBeforeFilter implements Filter {
                     decoded = Base64.getDecoder().decode(base64Token);
                     String token = new String(decoded, credentialsCharset);
                     int delim = token.indexOf(':');
-                    if (delim != -1) {
+                    if (delim == -1) {
                         throw new BadCredentialsException("Invalid basic authentication token");
                     }
                     String email = token.substring(0, delim);
                     if (email.toLowerCase().contains("test")) {
-                        httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                         return;
                     }
                 } catch (IllegalArgumentException e) {
